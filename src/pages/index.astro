@@ -1,0 +1,362 @@
+---
+import Layout from "../layouts/Layout.astro";
+
+const accessToken = Astro.cookies.get('accessToken')?.value;
+const isLoggedIn = !!accessToken;
+const origin = Astro.url.origin;
+
+let playlists = [];
+if (isLoggedIn) {
+  const response = await fetch(`${Astro.url.origin}/api/get-playlists`, {
+    headers: {
+      Cookie: `accessToken=${accessToken}`
+    }
+  });
+  if (response.ok) {
+    const data = await response.json();
+    playlists = data.items;
+    console.log(playlists)
+  }
+  
+}
+
+let step = 1;
+let selectedPlaylists = [];
+---
+
+<Layout title="Spotify Playlist Merger">
+  <main class="flex min-h-screen flex-col items-center justify-center p-4 sm:p-24 bg-black">
+        <h1 class="relative z-20 font-mono text-lg text-white  p-2 rounded">Spotify Playlist Merger</h1>
+        <div class="relative flex flex-col items-center mt-10 w-full max-w-full sm:max-w-6xl px-4 sm:px-0">      
+          <div class="absolute w-full h-full top-[-200px] right-[-50px]">
+        <div class={`gradient-background ${isLoggedIn ? 'logged-in' : 'logged-out'}`}></div>
+      </div>
+      {!isLoggedIn && (
+        <button
+          id="loginButton"
+          class="relative z-50 bg-green-500 hover:bg-green-700 text-white py-2 px-4 rounded font-mono text-sm lg:flex"
+          onclick="window.location.href='/api/login'"
+        >
+          Login with Spotify
+        </button>
+      )}
+      {isLoggedIn && (
+        <>
+          <div class="relative z-10 text-white py-2 px-4 rounded font-mono text-sm flex flex-col items-center w-full step-1">
+            <h2 class="mb-4 text-xl font-semibold text-center">Select playlists to merge</h2>
+            <input 
+              type="text" 
+              id="searchPlaylists" 
+              placeholder="Search playlists..." 
+              class="w-full p-2 mb-4 rounded bg-gray-800 text-white"
+            />
+            <form id="playlistForm" class="w-full">
+              <div id="playlistsContainer" class="max-h-96 overflow-y-auto mb-4 bg-gray-800 bg-opacity-50 rounded p-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" id="playlistsGrid">
+                  {playlists.map((playlist) => (
+                    <div class="playlist-item flex items-center hover:bg-gray-700 hover:bg-opacity-50 p-2 rounded transition-colors duration-200">
+                      <input 
+                        type="checkbox" 
+                        id={playlist.id} 
+                        name="playlists" 
+                        value={playlist.id}
+                        class="form-checkbox h-5 w-5 text-green-500 rounded focus:ring-2 focus:ring-green-500"
+                      />
+                      <label for={playlist.id} class="ml-2 text-sm font-medium text-gray-100 cursor-pointer truncate">
+                        {playlist.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <button 
+                type="submit" 
+                class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded transition-colors duration-200"
+              >
+                Merge Selected Playlists
+              </button>
+            </form>
+          </div>
+          <div class="relative z-10 text-white py-2 px-4 rounded font-mono text-sm flex flex-col items-center w-full step-2" style="display: none;">
+            <h2 class="mb-4 text-xl font-semibold text-center">Select a target playlist or create a new one</h2>
+            <input 
+              type="text" 
+              id="searchTargetPlaylists" 
+              placeholder="Search playlists..." 
+              class="w-full p-2 mb-4 rounded bg-gray-800 text-white"
+            />
+            <form id="targetPlaylistForm" class="w-full">
+              <div class="mb-4">
+                <input 
+                  type="text" 
+                  id="newPlaylistName" 
+                  name="newPlaylistName" 
+                  placeholder="New Playlist Name"
+                  class="w-full p-2 rounded bg-gray-800 text-white"
+                />
+              </div>
+              <div id="targetPlaylistsContainer" class="max-h-96 overflow-y-auto mb-4 bg-gray-800 bg-opacity-50 rounded p-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" id="targetPlaylistsGrid">
+                  {playlists.map((playlist) => (
+                    <div class="playlist-item flex items-center hover:bg-gray-700 hover:bg-opacity-50 p-2 rounded transition-colors duration-200">
+                      <input 
+                        type="radio" 
+                        id={`target-${playlist.id}`} 
+                        name="target-playlist" 
+                        value={playlist.id}
+                        class="form-radio h-5 w-5 text-green-500 rounded focus:ring-2 focus:ring-green-500"
+                      />
+                      <label for={`target-${playlist.id}`} class="ml-2 text-sm font-medium text-gray-100 cursor-pointer truncate">
+                        {playlist.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <button 
+                type="submit" 
+                class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded transition-colors duration-200"
+              >
+                Confirm Merge
+              </button>
+            </form>
+          </div>
+          <div id="mergeComplete" class="hidden relative z-10 text-white py-2 px-4 rounded font-mono text-sm flex flex-col items-center w-full mt-5 bg-gray-800 bg-opacity-75">
+            <h2 class="mb-4 text-xl font-semibold">Merging Complete!</h2>
+            <p class="mb-4">Your selected playlists have been successfully merged.</p>
+            <button
+              id="selectMergeTarget"
+              class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded transition-colors duration-200"
+              onclick="window.location.href='/'"
+            >
+              Merge more playlists
+            </button>
+          </div>
+
+          
+        </>
+      )}
+    </div>
+  </main>
+
+  <style>
+    html, body {
+  overflow-x: hidden;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+  h1, h2, label {
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+  }
+    .gradient-background::before,
+    .gradient-background::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(60px);
+      animation:
+        glow 3s infinite alternate,
+        move 5s infinite alternate;
+    }
+
+    .gradient-background::before {
+      width: 2500px;
+      height: 500px;
+      top: 250px;
+      left: 600px;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(
+        circle,
+        rgba(34, 197, 94, 1) 0%,
+        rgba(34, 197, 94, 0) 70%
+      );
+    }
+
+    .gradient-background::after {
+      width: 00px;
+      height: 200px;
+      top: 200px;
+      left: 0px;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(
+        circle,
+        rgba(125, 211, 252, 1) 0%,
+        rgba(125, 211, 252, 0) 70%
+      );
+    }
+
+	.gradient-background-logged-out::before,
+    .gradient-background-logged-out::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(60px);
+      animation:
+        glow 3s infinite alternate,
+        move 5s infinite alternate;
+    }
+
+    .gradient-background-logged-out::before {
+	  width: 300px;
+      height: 300px;
+      top: 0px;
+      left: 570px;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(
+        circle,
+        rgba(34, 197, 94, 1) 0%,
+        rgba(34, 197, 94, 0) 0%
+      );
+    }
+
+    .gradient-background-logged-out::after {
+      width: 300px;
+      height: 300px;
+      top: 0px;
+      left: 570px;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(
+        circle,
+        rgba(125, 211, 252, 1) 0%,
+        rgba(125, 211, 252, 0) 70%
+      );
+    }
+
+    @keyframes glow {
+      from {
+        filter: blur(60px) brightness(1);
+      }
+      to {
+        filter: blur(80px) brightness(1.5);
+      }
+    }
+
+    @keyframes move {
+      from {
+        transform: translate(-50%, -50%) translateY(0);
+      }
+      to {
+        transform: translate(-50%, -50%) translateY(-20px);
+      }
+    }
+  </style>
+
+<script>
+  const accessToken = "{{ accessToken }}";
+
+  let selectedPlaylists = [];
+  let targetPlaylist;
+  let step = 1
+  let creatingNewPlaylist;
+
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    selectedPlaylists = Array.from(document.querySelectorAll('input[name="playlists"]:checked'))
+      .map(checkbox => checkbox.value);
+    step = 2;
+    render();
+  };
+
+  const handleMergeSubmit = async (e) => {
+    e.preventDefault();
+    const selectedTargetPlaylist = document.querySelector('input[name="target-playlist"]:checked')?.value;
+    const newPlaylistName = document.getElementById('newPlaylistName').value;
+
+    if (selectedTargetPlaylist) {
+      targetPlaylist = selectedTargetPlaylist;
+      creatingNewPlaylist = false;
+    } else if (newPlaylistName) {
+      targetPlaylist = newPlaylistName;
+      creatingNewPlaylist = true;
+    } else {
+      targetPlaylist = null; // or handle the case where neither is selected
+    }
+
+    console.log('Merging to playlist:', targetPlaylist);
+    console.log('Selected playlists to merge:', selectedPlaylists);
+    step = 1;
+    finalRender();
+  };
+
+  const finalRender = () => {
+    document.querySelectorAll('.step-1').forEach(el => el.style.display = step === 2 ? 'block' : 'none');
+    document.querySelectorAll('.step-2').forEach(el => el.style.display = step === 2 ? 'block' : 'none');
+    mergeHandler();
+    document.getElementById('mergeComplete').classList.remove('hidden');
+  };
+  
+  const mergeHandler = async () => {
+      try {
+        const response = await fetch(`/api/merge-playlists`, {
+          method: 'POST', // Use POST method to send a body
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            playlists: selectedPlaylists,
+            targetPlaylist: targetPlaylist,
+            creatingNewPlaylist: creatingNewPlaylist // Add any additional data if needed
+          })
+        });
+
+        if (!response.ok) {
+          console.error('Failed to merge playlists');
+          return;
+        }
+
+        const result = await response.json();
+        console.log('Merge result:', result);
+      } catch (error) {
+        console.error('Error during merge:', error);
+      }
+    };
+
+  const render = () => {
+    document.querySelectorAll('.step-1').forEach(el => el.style.display = step === 1 ? 'block' : 'none');
+    document.querySelectorAll('.step-2').forEach(el => el.style.display = step === 2 ? 'block' : 'none');
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('playlistForm')?.addEventListener('submit', handleFormSubmit);
+    document.getElementById('targetPlaylistForm')?.addEventListener('submit', handleMergeSubmit);
+    render();
+  });
+
+  document.getElementById('searchPlaylists')?.addEventListener('input', (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    const playlists = document.querySelectorAll('.playlist-item');
+    
+    playlists.forEach(playlist => {
+      const playlistName = playlist.querySelector('label').innerText.toLowerCase();
+      if (playlistName.includes(searchTerm)) {
+        playlist.classList.remove('hidden');
+      } else {
+        playlist.classList.add('hidden');
+      }
+    });
+  });
+
+  document.getElementById('targetPlaylistForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    // Handle target playlist form submission logic
+  });
+
+  document.getElementById('searchTargetPlaylists')?.addEventListener('input', (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    const playlists = document.querySelectorAll('.playlist-item');
+    
+    playlists.forEach(playlist => {
+      const playlistName = playlist.querySelector('label').innerText.toLowerCase();
+      if (playlistName.includes(searchTerm)) {
+        playlist.classList.remove('hidden');
+      } else {
+        playlist.classList.add('hidden');
+      }
+    });
+  });
+</script>
+</Layout>
