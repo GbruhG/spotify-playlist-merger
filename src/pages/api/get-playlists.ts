@@ -48,6 +48,7 @@ export const GET: APIRoute = async ( request ) => {
 
       return new Response(JSON.stringify(playlists), { status: 200 });
     } catch (error) {
+      // @ts-ignore
       return new Response(JSON.stringify({ error: error.message }), { status: 500 });
     }
 };

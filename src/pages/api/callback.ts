@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 import { jsx } from 'astro/jsx-runtime';
 import { stringify } from 'querystring';
+import { config } from 'dotenv';
+
 
 const client_id = process.env.CLIENT_ID;
 const client_secret = process.env.CLIENT_SECRET;
@@ -45,6 +47,7 @@ export const GET: APIRoute = async ({ request }) => {
       // Redirect the user back to the main site with the cookie
       return new Response(null, {
         status: 302,
+        // @ts-ignore
         headers: {
           'Location': mainSiteUrl,
           'Set-Cookie': cookieHeader

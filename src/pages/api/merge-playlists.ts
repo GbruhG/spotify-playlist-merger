@@ -96,6 +96,7 @@ export const POST: APIRoute = async ( {request} ) => {
 
 
         while(data.next != null){
+            // @ts-ignore
             const response = await fetch(data.next, {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
@@ -177,6 +178,7 @@ export const POST: APIRoute = async ( {request} ) => {
       
       return new Response(JSON.stringify({ message: "Done" }), { status: 200 });
     } catch (error) {
+        // @ts-ignore
       return new Response(JSON.stringify({ error: error.message }), { status: 500 });
     }
 };
